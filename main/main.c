@@ -8,11 +8,12 @@
 
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
+#include "hardware/uart.h"
 #include "mpu6050.h"
 #include <math.h>
 
 #include "Fusion.h"
-#define SAMPLE_PERIOD (0.01f) // replace this with actual sample period
+#define SAMPLE_PERIOD (0.1f) // replace this with actual sample period
 
 const int MPU_ADDRESS = 0x68;
 const int I2C_SDA_GPIO = 4;
@@ -158,10 +159,9 @@ void mpu6050_task(void *p) {
         }
 
         // Aguarda 10 ms antes da próxima leitura (define a taxa de amostragem)
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(70));
     }
 }
-
 
 void uart_task(void *p){
     btn xya;
@@ -172,12 +172,19 @@ void uart_task(void *p){
         uart_putc_raw(uart0, xya.val);
         uart_putc_raw(uart0, xya.val >> 8);
         uart_putc_raw(uart0, -1);
+        // printf("Axis: %d | Val: %d\n", xya.axis, xya.val);
         }
     }
 }
 
 int main() {
     stdio_init_all();
+
+    // Inicializa UART0 para transmissão de bytes brutos
+    // Ajuste baudrate/pinos conforme seu hardware se necessário
+    uart_init(uart0, 115200);
+    gpio_set_function(0, GPIO_FUNC_UART); // TX
+    gpio_set_function(1, GPIO_FUNC_UART); // RX
 
     xQueuePos = xQueueCreate(3, sizeof(btn));
 
